@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASTRA | Return-to-Gravity Early Warning</title>
+<style>
+:root{--bg:#050912;--panel:rgba(14,24,42,.72);--line:rgba(120,160,220,.18);--text:#eef4ff;--muted:#8fa5c4;--cyan:#52e1f2;--blue:#7a9cff;--violet:#b28bff;--green:#4fe0a6;--amber:#ffc65c;--red:#ff6b86;--glow:0 0 24px rgba(82,225,242,.25)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;min-height:100vh;overflow-x:hidden}
+#stars{position:fixed;inset:0;z-index:0;width:100%;height:100%}
+.nebula{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(122,156,255,.20),transparent 60%),radial-gradient(ellipse 50% 40% at 95% 20%,rgba(178,139,255,.16),transparent 60%),radial-gradient(ellipse 60% 40% at 50% 110%,rgba(82,225,242,.14),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:1360px;margin:auto;padding:0 clamp(14px,3vw,36px) 50px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:22px 0}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:52px;height:52px}
+.logo svg{width:100%;height:100%;filter:drop-shadow(0 0 10px rgba(82,225,242,.6))}
+h1{margin:0;font-size:clamp(22px,3.2vw,32px);letter-spacing:.18em;font-weight:800;background:linear-gradient(90deg,#fff,var(--cyan) 60%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{margin:0;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:rgba(10,20,36,.7);backdrop-filter:blur(8px);padding:7px 13px;border-radius:30px;font-size:11px;letter-spacing:.08em;color:#c6e9f2;text-transform:uppercase}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.8s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;margin-bottom:18px}
+.glass{background:var(--panel);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(14px);padding:22px;position:relative;overflow:hidden;min-width:0}
+.glass::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(82,225,242,.7),transparent)}
+.eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin:0 0 6px}
+h2{margin:0 0 4px;font-size:20px}
+h3{margin:0 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#bcd0ea;font-weight:600}
+.sub{color:var(--muted);font-size:12.5px}
+.gaugeRow{display:grid;grid-template-columns:260px 1fr;gap:10px;align-items:center}
+#gauge{width:260px;height:210px}
+.statusBox{border-left:3px solid var(--green);padding:6px 0 6px 14px}
+.statusBox.monitor{border-color:var(--amber)}.statusBox.high{border-color:var(--red)}
+.statusBox b{font-size:22px;display:block}
+.statusBox p{margin:4px 0 0;color:#c3d2e6;font-size:13px}
+.phase{display:inline-block;margin-top:10px;padding:4px 11px;border-radius:20px;background:rgba(122,156,255,.14);border:1px solid rgba(122,156,255,.4);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#cdd9ff}
+.vitals{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.vital{border:1px solid var(--line);border-radius:16px;padding:14px;background:rgba(8,16,30,.55)}
+.vital small{display:block;color:var(--muted);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+.vital strong{font-size:30px;font-weight:700;display:block;line-height:1.2;margin-top:4px}
+.vital strong span{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+.delta{font-size:11.5px;color:var(--muted)}
+.delta.up{color:var(--amber)}.delta.down{color:var(--cyan)}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.controls .glass{padding:14px 16px}
+label{display:block;color:var(--muted);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+input,select,button{font:inherit}
+input[type=text],input[type=file],select{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(5,12,24,.8);color:var(--text)}
+input[type=file]{font-size:12px}
+button{border:0;border-radius:12px;padding:11px 16px;background:linear-gradient(100deg,#19b9d3,#6a7dff 60%,#a07bff);color:#fff;font-weight:700;letter-spacing:.03em;cursor:pointer;transition:transform .15s,box-shadow .2s}
+button:hover{transform:translateY(-1px);box-shadow:var(--glow)}
+button.secondary{background:rgba(30,50,80,.8);border:1px solid var(--line);font-weight:600}
+.scrub{margin-bottom:18px}
+.scrub .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap}
+input[type=range]{width:100%;accent-color:var(--cyan)}
+.timeline{display:flex;height:8px;border-radius:6px;overflow:hidden;margin:10px 0 4px}
+.timeline i{display:block;height:100%}
+.tlabels{display:flex;font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.chart{width:100%;height:210px;display:block}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+.tab{background:rgba(14,26,46,.8);border:1px solid var(--line);color:#b9c9dd;border-radius:30px;padding:9px 18px;font-weight:600;font-size:13px}
+.tab.active{background:linear-gradient(100deg,rgba(25,185,211,.35),rgba(122,125,255,.35));border-color:var(--cyan);color:#fff}
+.tabpage{display:none}.tabpage.active{display:block}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;position:sticky;top:0;background:#0c1729}
+tr.sel td{background:rgba(82,225,242,.09)}
+.scroll{overflow:auto;max-height:380px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.inner{background:rgba(6,14,28,.6);border:1px solid var(--line);border-radius:16px;padding:16px}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+.note{padding:11px 14px;border:1px solid rgba(255,198,92,.4);background:rgba(60,45,15,.4);color:#ffe3a3;border-radius:12px;font-size:12.5px;margin:12px 0}
+.alert{border-radius:12px;padding:12px 14px;border:1px solid var(--line);margin:12px 0;background:rgba(10,24,40,.7)}
+.alert.normal{border-color:rgba(79,224,166,.5)}.alert.monitor{border-color:rgba(255,198,92,.6)}.alert.high{border-color:rgba(255,107,134,.7)}
+.alert p{margin:3px 0 0;font-size:12.5px;color:#c5d2e2}
+.resource{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.resource:last-of-type{border:0}
+.resource a{color:var(--cyan);text-decoration:none;font-weight:650}
+.resource a:hover{text-decoration:underline}
+.chip{font-size:10px;color:#a8e8f2;border:1px solid rgba(82,225,242,.4);border-radius:20px;padding:3px 9px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase}
+code{background:rgba(255,255,255,.07);padding:2px 6px;border-radius:6px;font-size:12px}
+footer{text-align:center;color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-top:30px}
+@media(max-width:1000px){.hero,.two{grid-template-columns:1fr}.charts{grid-template-columns:1fr}.controls{grid-template-columns:repeat(2,1fr)}.mini{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.gaugeRow{grid-template-columns:1fr;justify-items:center}.vital strong{font-size:24px}.controls{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas><div class="nebula"></div>
+<div class="wrap">
+<header>
+ <div class="brand">
+  <div class="logo"><svg viewBox="0 0 64 64" fill="none"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#52e1f2"/><stop offset="1" stop-color="#b28bff"/></linearGradient></defs><circle cx="32" cy="32" r="9" fill="url(#g)"/><ellipse cx="32" cy="32" rx="28" ry="11" stroke="url(#g)" stroke-width="2" transform="rotate(-25 32 32)"/><ellipse cx="32" cy="32" rx="28" ry="11" stroke="url(#g)" stroke-width="1.2" opacity=".5" transform="rotate(35 32 32)"/><path d="M14 32h8l3-7 5 15 4-11 3 3h13" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/><circle cx="55" cy="22" r="3" fill="#fff"/></svg></div>
+  <div><h1>ASTRA</h1><p class="tag">Return-to-Gravity Early Warning · Orthostatic Intolerance</p></div>
+ </div>
+ <div class="badges"><span class="pill"><span class="dot"></span>Mission control</span><span class="pill">NASA App Challenge</span><span class="pill">Simulated telemetry</span></div>
+</header>
+
+<section class="controls">
+ <div class="glass"><label for="astro">Crew member</label><input type="text" id="astro" value="ASTRO-001" maxlength="24"></div>
+ <div class="glass"><label for="duration">Mission length (days)</label><select id="duration"><option>30</option><option>45</option><option>60</option><option selected>90</option></select></div>
+ <div class="glass"><label for="scenario">Flight scenario</label><select id="scenario"><option value="drift">Gradual physiological drift</option><option value="stable">Stable baseline</option><option value="abrupt">Abrupt change</option><option value="variable">High variability</option></select></div>
+ <div class="glass" style="display:flex;align-items:end"><button id="generate" style="width:100%">↻ Launch new mission</button></div>
+</section>
+
+<section class="hero">
+ <div class="glass">
+  <p class="eyebrow">Personal baseline watch</p>
+  <h2>Crew Orbit Index</h2>
+  <div class="gaugeRow">
+   <canvas id="gauge" width="260" height="210"></canvas>
+   <div>
+    <div id="status" class="statusBox"><b>Baseline-like</b><p>Generating…</p></div>
+    <span class="phase" id="phase">—</span>
+   </div>
+  </div>
+ </div>
+ <div class="glass">
+  <p class="eyebrow">Vitals · selected mission day</p>
+  <h2 id="dayTitle">Day —</h2>
+  <div class="vitals" style="margin-top:12px">
+   <div class="vital"><small>Heart rate</small><strong id="mHr">—<span>bpm</span></strong><div class="delta" id="dHr"></div></div>
+   <div class="vital"><small>HRV · RMSSD</small><strong id="mHrv">—<span>ms</span></strong><div class="delta" id="dHrv"></div></div>
+   <div class="vital"><small>Blood pressure</small><strong id="mBp">—<span>mmHg</span></strong><div class="delta" id="dBp"></div></div>
+   <div class="vital"><small>SpO₂</small><strong id="mSpo">—<span>%</span></strong><div class="delta" id="dSpo"></div></div>
+  </div>
+ </div>
+</section>
+
+<section class="glass scrub">
+ <div class="top"><div><p class="eyebrow" style="margin:0">Mission timeline</p><span class="sub">Drag to travel through the flight — every panel follows the selected day.</span></div><span class="pill" id="scrubLabel">Day —</span></div>
+ <input type="range" id="scrub" min="1" max="90" value="90">
+ <div class="timeline"><i style="width:20%;background:#7a9cff"></i><i style="width:40%;background:#52e1f2"></i><i style="width:25%;background:#ffc65c"></i><i style="width:15%;background:#ff6b86"></i></div>
+ <div class="tlabels"><span style="width:20%">Adaptation</span><span style="width:40%">Cruise</span><span style="width:25%">Pre-return</span><span style="width:15%">Return window</span></div>
+</section>
+
+<section class="charts">
+ <div class="glass"><h3>Heart rate</h3><canvas id="hrChart" class="chart"></canvas></div>
+ <div class="glass"><h3>HRV (RMSSD)</h3><canvas id="hrvChart" class="chart"></canvas></div>
+ <div class="glass"><h3>Systolic pressure</h3><canvas id="bpChart" class="chart"></canvas></div>
+</section>
+
+<nav class="tabs">
+ <button class="tab active" data-tab="mission">Telemetry log</button>
+ <button class="tab" data-tab="lab">Stand-test lab</button>
+ <button class="tab" data-tab="liveai">AI model & live stream</button>
+ <button class="tab" data-tab="ecg">Live ECG</button>
+ <button class="tab" data-tab="nasa">NASA resources</button>
+</nav>
+
+<section id="mission" class="tabpage active glass">
+ <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><div><h2>Mission telemetry log</h2><p class="sub">Generated locally in your browser. Click a row to jump to that day.</p></div><button class="secondary" id="download">↓ Download CSV</button></div>
+ <div class="scroll"><table><thead><tr><th>Day</th><th>HR</th><th>HRV</th><th>SBP</th><th>DBP</th><th>SpO₂</th><th>Index</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+
+<section id="lab" class="tabpage glass">
+ <p class="eyebrow">Return-to-Earth simulator</p>
+ <h2>Virtual stand test</h2>
+ <p class="sub">A crew member rests supine, then stands up at minute 3. Compare the cardiovascular response at the selected mission day against the personal baseline response.</p>
+ <canvas id="standChart" class="chart" style="height:290px;margin-top:12px"></canvas>
+ <div class="mini">
+  <div class="vital"><small>Standing HR rise</small><strong id="sHr">—<span>bpm</span></strong></div>
+  <div class="vital"><small>Standing SBP dip</small><strong id="sBp">—<span>mmHg</span></strong></div>
+  <div class="vital"><small>Recovery time</small><strong id="sRec">—<span>sec</span></strong></div>
+  <div class="vital"><small>Readiness</small><strong id="sReady" style="font-size:20px">—</strong></div>
+ </div>
+</section>
+
+<section id="liveai" class="tabpage glass">
+ <h2>AI model training & live telemetry</h2>
+ <p class="sub">A lightweight personalized anomaly model that runs entirely in your browser. It learns a robust reference profile from CSV readings or demo data, then scores each incoming observation.</p>
+ <div class="two" style="margin-top:14px">
+  <div class="inner">
+   <h3>1 · Train personal baseline</h3>
+   <p class="sub">CSV columns: hr, hrv, sbp, dbp, spo2 (at least two, 10+ rows). Common names like heart_rate, rmssd, systolic and diastolic are recognised, and commas, semicolons or tabs all work. Training starts automatically when you pick a file.</p>
+   <label for="trainingFile">Training CSV</label><input type="file" id="trainingFile" accept=".csv,.txt,text/csv,text/plain,application/vnd.ms-excel">
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button id="trainUpload">Train from CSV</button><button class="secondary" id="trainDemo">Train from demo data</button><button class="secondary" id="sampleCsv">↓ Sample CSV</button></div>
+   <p id="trainStatus" class="sub" aria-live="polite" style="margin-top:10px">Model not trained yet.</p>
+   <div id="modelSummary" class="sub"></div>
+  </div>
+  <div class="inner">
+   <h3>2 · Connect a live stream</h3>
+   <p class="sub">Message format: <code>{"hr":68,"hrv":52,"sbp":118,"dbp":78,"spo2":98}</code></p>
+   <label for="wsUrl">WebSocket URL</label><input type="text" id="wsUrl" value="ws://localhost:8765" spellcheck="false">
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button id="connectWs">Connect</button><button class="secondary" id="disconnectWs">Disconnect</button><button class="secondary" id="simulateLive">Start demo stream</button><button class="secondary" id="stopLive">Stop demo</button></div>
+   <p id="streamStatus" class="sub" aria-live="polite" style="margin-top:10px">Stream disconnected.</p>
+  </div>
+ </div>
+ <div id="trainOut" class="inner" style="display:none;margin-top:14px">
+  <p class="eyebrow">Model trained</p>
+  <h2>Readings used for training</h2>
+  <p class="sub" id="toMeta"></p>
+  <div class="two" style="margin-top:10px">
+   <div>
+    <h3>Training readings</h3>
+    <div class="scroll" style="max-height:270px"><table><thead id="toHead"></thead><tbody id="toRows"></tbody></table></div>
+   </div>
+   <div>
+    <h3>What the model learned</h3>
+    <div class="scroll" style="max-height:270px"><table><thead><tr><th>Signal</th><th>Min</th><th>Median</th><th>Max</th><th>Scale</th><th>Normal band</th><th>Monitor if</th><th>High if</th></tr></thead><tbody id="toStats"></tbody></table></div>
+    <p class="sub" style="margin-top:6px">Normal band = median ± 2 × scale. "Monitor / High if" show the value at which that signal alone would push the deviation index to 35 / 65.</p>
+   </div>
+  </div>
+  <h3 style="margin-top:18px">Effect of the trained model</h3>
+  <div id="toEffect" class="sub" style="color:#c5d2e2"></div>
+  <canvas id="toChart" class="chart" style="height:210px;margin-top:10px"></canvas>
+  <p class="sub" id="toLegend"></p>
+ </div>
+ <div class="mini">
+  <div class="vital"><small>Stream HR</small><strong id="liveHr">—<span>bpm</span></strong></div>
+  <div class="vital"><small>Stream HRV</small><strong id="liveHrv">—<span>ms</span></strong></div>
+  <div class="vital"><small>Stream SBP</small><strong id="liveSbp">—<span>mmHg</span></strong></div>
+  <div class="vital"><small>Model deviation</small><strong id="liveScore">—</strong></div>
+ </div>
+ <div id="liveAlert" class="alert normal"><b>Waiting for readings</b><p>Train a baseline, then start a demo stream or connect a WebSocket source.</p></div>
+ <h3>Incoming observations</h3>
+ <div class="scroll"><table><thead><tr><th>Time</th><th>HR</th><th>HRV</th><th>SBP</th><th>DBP</th><th>SpO₂</th><th>Deviation</th><th>Status</th></tr></thead><tbody id="liveRows"></tbody></table></div>
+ <p class="sub" style="margin-top:10px">Readings are processed in this browser tab only and are not uploaded or stored.</p>
+</section>
+
+<section id="ecg" class="tabpage glass">
+ <h2>Live ECG monitor</h2>
+ <p class="sub">Synthetic single-lead trace whose rate follows the heart rate of the selected mission day.</p>
+ <canvas id="ecgChart" class="chart" style="height:290px;margin-top:12px"></canvas>
+ <div class="mini" style="grid-template-columns:repeat(3,1fr)">
+  <div class="vital"><small>Rate</small><strong id="ecgRate">—<span>bpm</span></strong></div>
+  <div class="vital"><small>Lead</small><strong>II</strong></div>
+  <div class="vital"><small>Source</small><strong style="font-size:18px">Synthetic</strong></div>
+ </div>
+</section>
+
+<section id="nasa" class="tabpage glass">
+ <h2>NASA research resources</h2>
+ <p class="sub">Official NASA portals and documents behind the science of ASTRA.</p>
+ <div class="resource"><div><a href="https://humanresearchroadmap.nasa.gov/Risks/risk.aspx?i=179" target="_blank" rel="noopener">NASA Human Research Roadmap · Cardiovascular risk</a><div class="sub">Cardiovascular deconditioning and orthostatic intolerance in spaceflight.</div></div><span class="chip">Risk evidence</span></div>
+ <div class="resource"><div><a href="https://science.nasa.gov/biological-physical/data/osdr/" target="_blank" rel="noopener">NASA Open Science Data Repository (OSDR)</a><div class="sub">Space life-science data: physiological, phenotypic, behavioral and biomedical.</div></div><span class="chip">Data</span></div>
+ <div class="resource"><div><a href="https://visualization.osdr.nasa.gov/" target="_blank" rel="noopener">NASA OSDR Visualization Portal</a><div class="sub">Explore datasets and visualizations.</div></div><span class="chip">Explore</span></div>
+ <div class="resource"><div><a href="https://www.nasa.gov/ochmo-tb-031-exercise-overview-2/" target="_blank" rel="noopener">NASA Technical Brief · Exercise overview</a><div class="sub">Altered gravity, deconditioning and exercise countermeasures.</div></div><span class="chip">Countermeasures</span></div>
+ <div class="resource"><div><a href="https://science.nasa.gov/reference/osdr-faq/" target="_blank" rel="noopener">NASA OSDR FAQ · Data access</a><div class="sub">Search, access and controlled-access data guidance.</div></div><span class="chip">Guide</span></div>
+</section>
+
+<footer>ASTRA · NASA App Challenge prototype · Runs locally in your browser</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let records=[],base={},sel=0;
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function median(a){let s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
+const keys=['hr','hrv','sbp','dbp','spo2'];
+const colorFor=s=>s>=65?'#ff6b86':s>=35?'#ffc65c':'#4fe0a6';
+
+/* ---------- starfield ---------- */
+(function(){
+ const c=$('stars'),ctx=c.getContext('2d');let stars=[];
+ function init(){c.width=innerWidth;c.height=innerHeight;stars=Array.from({length:Math.round(innerWidth*innerHeight/6500)},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.3+.2,s:Math.random()*.25+.03,p:Math.random()*6}))}
+ function frame(t){ctx.clearRect(0,0,c.width,c.height);for(const s of stars){s.y+=s.s;if(s.y>c.height){s.y=0;s.x=Math.random()*c.width}ctx.globalAlpha=.4+.6*Math.abs(Math.sin(t/1200+s.p));ctx.fillStyle='#cfe6ff';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.3);ctx.fill()}requestAnimationFrame(frame)}
+ addEventListener('resize',init);init();requestAnimationFrame(frame);
+})();
+
+/* ---------- mission data ---------- */
+function phaseOf(d,n){const f=d/n;return f<=.2?'Adaptation':f<=.6?'Cruise':f<=.85?'Pre-return':'Return window'}
+function generate(){
+ const n=+$('duration').value,scenario=$('scenario').value,name=$('astro').value||'ASTRO-001';
+ records=[];let hr0=65,hrv0=55,sbp0=120,dbp0=80,spo20=98;
+ for(let d=1;d<=n;d++){
+  let p=clamp((d-n*.25)/(n*.75),0,1),hr=hr0+randn()*2,hrv=hrv0+randn()*3,sbp=sbp0+randn()*3,dbp=dbp0+randn()*2,spo2=spo20+randn()*.35;
+  if(scenario==='drift'){hr+=17*p;hrv-=22*p;sbp-=7*p;dbp-=3*p;spo2-=.6*p}
+  if(scenario==='abrupt'&&d>=Math.floor(n*.65)){hr+=15;hrv-=20;sbp-=9}
+  if(scenario==='variable'){hr+=randn()*7;hrv+=randn()*10;sbp+=randn()*8}
+  records.push({astronaut:name,day:d,hr:clamp(hr,42,130),hrv:clamp(hrv,5,110),sbp:clamp(sbp,85,155),dbp:clamp(dbp,50,100),spo2:clamp(spo2,90,100)});
+ }
+ const b=records.slice(0,Math.max(5,Math.ceil(n*.2)));
+ keys.forEach(k=>base[k]=median(b.map(x=>x[k])));
+ records.forEach(r=>{
+  const zhr=Math.abs(r.hr-base.hr)/Math.max(3,base.hr*.06);
+  const zhrv=Math.abs(r.hrv-base.hrv)/Math.max(5,base.hrv*.12);
+  const zbp=Math.abs(r.sbp-base.sbp)/Math.max(5,base.sbp*.05);
+  const zdbp=Math.abs(r.dbp-base.dbp)/Math.max(4,base.dbp*.06);
+  const zspo=Math.abs(r.spo2-base.spo2)/1.5;
+  r.index=Math.round(clamp((.28*zhr+.32*zhrv+.22*zbp+.10*zdbp+.08*zspo)*25,0,100));
+  r.status=r.index>=65?'High anomaly':r.index>=35?'Monitor':'Baseline-like';
+ });
+ const sc=$('scrub');sc.max=n;sc.value=n;sel=n-1;
+ $('rows').innerHTML=records.slice().reverse().map(r=>`<tr data-i="${r.day-1}"><td>${r.day}</td><td>${r.hr.toFixed(1)}</td><td>${r.hrv.toFixed(1)}</td><td>${r.sbp.toFixed(1)}</td><td>${r.dbp.toFixed(1)}</td><td>${r.spo2.toFixed(1)}</td><td>${r.index}</td><td>${r.status}</td></tr>`).join('');
+ render();
+ if(typeof aiModel!=='undefined'&&aiModel)showTraining();
+}
+function delta(el,v,b,unit,invert){const d=v-b;el.textContent=(d>=0?'+':'')+d.toFixed(1)+' '+unit+' vs baseline';el.className='delta '+(Math.abs(d)<(unit==='%'?.5:3)?'':(d>0?'up':'down'))}
+function render(){
+ if(!records.length)return;
+ const r=records[sel],n=records.length,col=colorFor(r.index);
+ $('dayTitle').textContent=`${r.astronaut} · Day ${r.day} of ${n}`;
+ $('scrubLabel').textContent='Day '+r.day+' / '+n;
+ $('mHr').innerHTML=r.hr.toFixed(0)+'<span>bpm</span>';
+ $('mHrv').innerHTML=r.hrv.toFixed(1)+'<span>ms</span>';
+ $('mBp').innerHTML=r.sbp.toFixed(0)+'/'+r.dbp.toFixed(0)+'<span>mmHg</span>';
+ $('mSpo').innerHTML=r.spo2.toFixed(1)+'<span>%</span>';
+ delta($('dHr'),r.hr,base.hr,'bpm');delta($('dHrv'),r.hrv,base.hrv,'ms');delta($('dBp'),r.sbp,base.sbp,'mmHg');delta($('dSpo'),r.spo2,base.spo2,'%');
+ const st=$('status');st.className='statusBox '+(r.index>=65?'high':r.index>=35?'monitor':'');
+ st.innerHTML=`<b style="color:${col}">${r.status}</b><p>Relative deviation from this crew member's own baseline on day ${r.day}. A display index, not a probability or diagnosis.</p>`;
+ $('phase').textContent=phaseOf(r.day,n);
+ drawGauge(r.index,col);
+ drawLine('hrChart',records.map(x=>x.hr),base.hr,'#52e1f2');
+ drawLine('hrvChart',records.map(x=>x.hrv),base.hrv,'#b28bff');
+ drawLine('bpChart',records.map(x=>x.sbp),base.sbp,'#7a9cff');
+ document.querySelectorAll('#rows tr').forEach(t=>t.classList.toggle('sel',+t.dataset.i===sel));
+ if($('lab').classList.contains('active'))drawStand();
+}
+function drawGauge(score,col){
+ const c=$('gauge'),ctx=c.getContext('2d'),dpr=devicePixelRatio||1,W=260,H=210;
+ c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+ const cx=130,cy=115,R=88,a0=Math.PI*.8,a1=Math.PI*2.2;
+ ctx.lineCap='round';ctx.lineWidth=16;ctx.strokeStyle='rgba(120,160,220,.15)';ctx.beginPath();ctx.arc(cx,cy,R,a0,a1);ctx.stroke();
+ const g=ctx.createLinearGradient(0,0,W,0);g.addColorStop(0,'#4fe0a6');g.addColorStop(.5,'#ffc65c');g.addColorStop(1,'#ff6b86');
+ ctx.strokeStyle=g;ctx.shadowColor=col;ctx.shadowBlur=14;ctx.beginPath();ctx.arc(cx,cy,R,a0,a0+(a1-a0)*score/100);ctx.stroke();ctx.shadowBlur=0;
+ for(let i=0;i<=10;i++){const a=a0+(a1-a0)*i/10;ctx.strokeStyle='rgba(200,220,255,.35)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*(R+16),cy+Math.sin(a)*(R+16));ctx.lineTo(cx+Math.cos(a)*(R+21),cy+Math.sin(a)*(R+21));ctx.stroke()}
+ ctx.fillStyle='#eef4ff';ctx.font='700 46px system-ui';ctx.textAlign='center';ctx.fillText(score,cx,cy+14);
+ ctx.fillStyle='#8fa5c4';ctx.font='11px system-ui';ctx.fillText('ANOMALY INDEX / 100',cx,cy+36);
+}
+function drawLine(id,vals,baseline,color){
+ const c=$(id),ctx=c.getContext('2d'),w=c.clientWidth,h=c.clientHeight,dpr=devicePixelRatio||1;
+ c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+ const L=38,R=10,T=10,B=24,pw=w-L-R,ph=h-T-B,lo=Math.min(...vals,baseline),hi=Math.max(...vals,baseline),pad=(hi-lo||1)*.2,min=lo-pad,max=hi+pad;
+ const X=i=>L+i*pw/(vals.length-1),Y=v=>T+(max-v)*ph/(max-min);
+ ctx.clearRect(0,0,w,h);ctx.font='10px system-ui';
+ const bn=Math.max(5,Math.ceil(vals.length*.2))-1;
+ ctx.fillStyle='rgba(122,156,255,.10)';ctx.fillRect(L,T,X(bn)-L,ph);
+ ctx.strokeStyle='rgba(120,160,220,.15)';ctx.lineWidth=1;ctx.fillStyle='#8fa5c4';
+ for(let i=0;i<5;i++){const y=T+i*ph/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();ctx.fillText((max-(max-min)*i/4).toFixed(0),4,y+3)}
+ const grad=ctx.createLinearGradient(0,T,0,T+ph);grad.addColorStop(0,color+'55');grad.addColorStop(1,color+'00');
+ ctx.beginPath();vals.forEach((v,i)=>i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)));
+ ctx.lineTo(X(vals.length-1),T+ph);ctx.lineTo(X(0),T+ph);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+ ctx.strokeStyle=color;ctx.lineWidth=2;ctx.shadowColor=color;ctx.shadowBlur=8;ctx.beginPath();vals.forEach((v,i)=>i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)));ctx.stroke();ctx.shadowBlur=0;
+ ctx.strokeStyle='#ffc65c';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(L,Y(baseline));ctx.lineTo(w-R,Y(baseline));ctx.stroke();ctx.setLineDash([]);
+ const sx=X(sel);ctx.strokeStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.moveTo(sx,T);ctx.lineTo(sx,T+ph);ctx.stroke();
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sx,Y(vals[sel]),4.5,0,6.3);ctx.fill();
+ ctx.fillStyle='#8fa5c4';ctx.textAlign='left';ctx.fillText('Day 1',L,h-6);ctx.textAlign='right';ctx.fillText('Day '+vals.length,w-R,h-6);ctx.textAlign='left';
+}
+
+/* ---------- stand test lab ---------- */
+function drawStand(){
+ const c=$('standChart'),ctx=c.getContext('2d'),w=c.clientWidth,h=c.clientHeight,dpr=devicePixelRatio||1;
+ c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ const r=records[sel],idx=r.index;
+ const riseBase=10,riseNow=10+idx*.34,dipBase=3,dipNow=3+idx*.2,recBase=25,recNow=25+idx*1.3;
+ const curve=(t,rise,dip,rec,restHr,restSbp)=>{ // t in minutes, stand at 3
+  const s=Math.max(0,t-3),k=1-Math.exp(-s*60/12),dec=Math.exp(-s*60/rec/1.4);
+  const hr=restHr+(t<3?0:rise*k*(.55+.45*dec)),sbp=restSbp-(t<3?0:dip*Math.exp(-s*60/(rec/1.2))*Math.min(1,s*6));
+  return{hr:hr,sbp:sbp};
+ };
+ const N=140,A=[],B=[];
+ for(let i=0;i<=N;i++){const t=i/N*8;A.push(curve(t,riseBase,dipBase,recBase,base.hr,base.sbp));B.push(curve(t,riseNow,dipNow,recNow,r.hr-0*1,r.sbp))}
+ const all=A.map(x=>x.hr).concat(B.map(x=>x.hr)),lo=Math.min(...all)-4,hi=Math.max(...all)+4;
+ const L=40,Rr=14,T=16,Bt=28,pw=w-L-Rr,ph=h-T-Bt;
+ const X=i=>L+i/N*pw,Y=v=>T+(hi-v)*ph/(hi-lo);
+ ctx.font='10px system-ui';ctx.fillStyle='#8fa5c4';ctx.strokeStyle='rgba(120,160,220,.15)';
+ for(let i=0;i<5;i++){const y=T+i*ph/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-Rr,y);ctx.stroke();ctx.fillText((hi-(hi-lo)*i/4).toFixed(0),6,y+3)}
+ const sx=L+pw*3/8;ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.moveTo(sx,T);ctx.lineTo(sx,T+ph);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle='#cfe0f5';ctx.fillText('STAND UP',sx+6,T+12);
+ const line=(arr,col,wd)=>{ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.shadowColor=col;ctx.shadowBlur=8;ctx.beginPath();arr.forEach((p,i)=>i?ctx.lineTo(X(i),Y(p.hr)):ctx.moveTo(X(i),Y(p.hr)));ctx.stroke();ctx.shadowBlur=0};
+ line(A,'#7a9cff',2);line(B,colorFor(idx),2.5);
+ ctx.fillStyle='#8fa5c4';ctx.fillText('0 min',L,h-8);ctx.textAlign='right';ctx.fillText('8 min',w-Rr,h-8);ctx.textAlign='left';
+ ctx.fillStyle='#7a9cff';ctx.fillRect(L+8,h-22-0,0,0);
+ ctx.fillText('— Baseline response',w-Rr-260,T+12);ctx.fillStyle=colorFor(idx);ctx.fillText('— Day '+r.day+' response',w-Rr-130,T+12);
+ $('sHr').innerHTML='+'+riseNow.toFixed(0)+'<span>bpm</span>';
+ $('sBp').innerHTML='−'+dipNow.toFixed(0)+'<span>mmHg</span>';
+ $('sRec').innerHTML=recNow.toFixed(0)+'<span>sec</span>';
+ const rd=$('sReady');rd.textContent=idx>=65?'Needs support':idx>=35?'Watch closely':'On track';rd.style.color=colorFor(idx);
+}
+
+/* ---------- live ECG ---------- */
+let ecgT=0,last=0;
+function beat(p){let v=.12*Math.exp(-Math.pow((p-.18)/.045,2));v-=.16*Math.exp(-Math.pow((p-.355)/.014,2));v+=1.05*Math.exp(-Math.pow((p-.38)/.014,2));v-=.22*Math.exp(-Math.pow((p-.41)/.016,2));v+=.26*Math.exp(-Math.pow((p-.64)/.07,2));return v}
+function ecgLoop(ts){
+ requestAnimationFrame(ecgLoop);
+ if(!$('ecg').classList.contains('active')||!records.length)return;
+ const dt=(ts-last)/1000;last=ts;ecgT+=Math.min(dt,.1)*1.0;
+ const hr=records[sel].hr,period=60/hr;$('ecgRate').innerHTML=hr.toFixed(0)+'<span>bpm</span>';
+ const c=$('ecgChart'),ctx=c.getContext('2d'),w=c.clientWidth,h=c.clientHeight,dpr=devicePixelRatio||1;
+ if(c.width!==Math.round(w*dpr)){c.width=w*dpr;c.height=h*dpr}
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ ctx.strokeStyle='rgba(82,225,242,.08)';ctx.lineWidth=1;for(let x=0;x<w;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=0;y<h;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+ const win=4;ctx.strokeStyle='#52e1f2';ctx.lineWidth=2.2;ctx.shadowColor='#52e1f2';ctx.shadowBlur=10;ctx.beginPath();
+ for(let x=0;x<w;x++){const t=ecgT-win+x/w*win;const p=((t/period)%1+1)%1;const y=h*.58-(beat(p)+.01*Math.sin(t*9))*h*.38;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}
+ ctx.stroke();ctx.shadowBlur=0;
+ const g=ctx.createLinearGradient(w-160,0,w,0);g.addColorStop(0,'rgba(5,9,18,0)');g.addColorStop(1,'rgba(5,9,18,.0)');
+}
+
+/* ---------- AI model + live stream ---------- */
+let aiModel=null,liveSocket=null,liveTimer=null,liveHistory=[];
+const ALIASES={
+ hr:['hr','heartrate','heartratebpm','hrbpm','pulse','pulserate','bpm','hearrate'],
+ hrv:['hrv','rmssd','hrvrmssd','hrvms','hrvrmssdms','hrvrmssd'],
+ sbp:['sbp','systolic','sys','systolicbp','systolicpressure','bpsys','bpsystolic','systolicmmhg'],
+ dbp:['dbp','diastolic','dia','diastolicbp','diastolicpressure','bpdia','bpdiastolic','diastolicmmhg'],
+ spo2:['spo2','spo','o2','sao2','oxygen','oxygensaturation','spo2percent','bloodoxygen']
+};
+const DEFAULTS={hr:65,hrv:55,sbp:120,dbp:80,spo2:98};
+function normHeader(h){return String(h).replace(/^\uFEFF/,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function splitLine(line,d){
+ const out=[];let cur='',q=false;
+ for(let i=0;i<line.length;i++){const ch=line[i];
+  if(ch==='"'){if(q&&line[i+1]==='"'){cur+='"';i++}else q=!q}
+  else if(ch===d&&!q){out.push(cur);cur=''}
+  else cur+=ch}
+ out.push(cur);return out.map(s=>s.trim());
+}
+function toNum(s,d){
+ if(s==null)return NaN;let t=String(s).trim().replace(/^"|"$/g,'');if(t==='')return NaN;
+ if(d!==','&&t.includes(',')&&!t.includes('.'))t=t.replace(',','.');
+ t=t.replace(/[^0-9eE+\-.]/g,'');return t===''?NaN:parseFloat(t);
+}
+function parseCSV(text){
+ text=String(text).replace(/^\uFEFF/,'');
+ const lines=text.split(/\r\n|\n|\r/).filter(l=>l.trim()!=='');
+ if(lines.length<2)throw new Error('The file looks empty. It needs a header row plus at least 10 data rows.');
+ const first=lines[0],counts={',':(first.match(/,/g)||[]).length,';':(first.match(/;/g)||[]).length,'\t':(first.match(/\t/g)||[]).length};
+ const d=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+ const headers=splitLine(first,d),norm=headers.map(normHeader),idx={};
+ keys.forEach(k=>{const i=norm.findIndex(h=>ALIASES[k].includes(h));if(i>=0)idx[k]=i});
+ const cols=keys.filter(k=>k in idx);
+ if(cols.length<2)throw new Error('Could not find enough columns. Found headers: '+headers.join(', ')+'. Use names like hr, hrv, sbp, dbp, spo2 (at least two of them).');
+ const rows=[];
+ for(let li=1;li<lines.length;li++){
+  const c=splitLine(lines[li],d),r={};
+  if(cols.every(k=>{const v=toNum(c[idx[k]],d);r[k]=v;return Number.isFinite(v)}))rows.push(r);
+ }
+ rows.cols=cols;
+ if(rows.length<10)throw new Error(`Only ${rows.length} valid numeric rows found (need at least 10). Columns used: ${cols.join(', ')}.`);
+ return rows;
+}
+function trainModel(data,source){
+ if(!data||data.length<10)throw new Error('Please provide at least 10 valid observations.');
+ const cols=data.cols||keys,stats={},floor={hr:3,hrv:5,sbp:5,dbp:4,spo2:.5};
+ keys.forEach(k=>{
+  if(cols.includes(k)){const v=data.map(r=>r[k]),med=median(v),mad=median(v.map(x=>Math.abs(x-med)));stats[k]={median:med,scale:Math.max(mad*1.4826,floor[k])}}
+  else stats[k]={median:DEFAULTS[k],scale:floor[k]*2};
+ });
+ aiModel={stats,cols,n:data.length,source,trainedAt:new Date(),data:data.slice()};
+ const st=$('trainStatus');st.style.color='#4fe0a6';
+ st.textContent=`✓ Model trained from ${data.length} observations (${source}) using: ${cols.join(', ')} · ${aiModel.trainedAt.toLocaleTimeString()}`;
+ $('modelSummary').innerHTML=cols.map(k=>`${k.toUpperCase()}: median ${stats[k].median.toFixed(1)}, scale ${stats[k].scale.toFixed(1)}`).join(' · ');
+ showTraining();
+}
+const LABEL={hr:'HR bpm',hrv:'HRV ms',sbp:'SBP mmHg',dbp:'DBP mmHg',spo2:'SpO₂ %'};
+const WEIGHT={hr:.25,hrv:.30,sbp:.25,dbp:.12,spo2:.08};
+function showTraining(){
+ const m=aiModel;if(!m)return;
+ $('trainOut').style.display='block';
+ const cols=m.cols,d=m.data,ws=cols.reduce((a,k)=>a+WEIGHT[k],0);
+ $('toMeta').textContent=`${m.n} readings from "${m.source}" · signals used: ${cols.map(k=>LABEL[k]).join(', ')} · trained ${m.trainedAt.toLocaleTimeString()}`;
+ $('toHead').innerHTML='<tr><th>#</th>'+cols.map(k=>`<th>${LABEL[k]}</th>`).join('')+'</tr>';
+ const MAXR=200;
+ $('toRows').innerHTML=d.slice(0,MAXR).map((r,i)=>`<tr><td>${i+1}</td>${cols.map(k=>`<td>${r[k].toFixed(1)}</td>`).join('')}</tr>`).join('')+(d.length>MAXR?`<tr><td colspan="${cols.length+1}">… ${d.length-MAXR} more readings used but not shown</td></tr>`:'');
+ $('toStats').innerHTML=cols.map(k=>{
+  const v=d.map(r=>r[k]),mn=v.reduce((a,b)=>Math.min(a,b),Infinity),mx=v.reduce((a,b)=>Math.max(a,b),-Infinity),s=m.stats[k],med=s.median,sc=s.scale;
+  const zFor=thr=>thr*ws*.05/WEIGHT[k];
+  const cell=thr=>{const z=zFor(thr);return z>5?'needs other signals too':`< ${(med-z*sc).toFixed(1)} or > ${(med+z*sc).toFixed(1)}`};
+  return `<tr><td>${LABEL[k]}</td><td>${mn.toFixed(1)}</td><td>${med.toFixed(1)}</td><td>${mx.toFixed(1)}</td><td>${sc.toFixed(1)}</td><td>${(med-2*sc).toFixed(1)} – ${(med+2*sc).toFixed(1)}</td><td>${cell(35)}</td><td>${cell(65)}</td></tr>`;
+ }).join('');
+ // effect: re-score the current mission with the trained model
+ const eff=$('toEffect');
+ let html=`<ul style="margin:4px 0 8px 18px;padding:0"><li>Every new reading (demo stream or WebSocket) is now compared with <b>this</b> profile: the weighted distance from each median, measured in units of the signal's robust scale.</li><li>A tight training spread (small scale) makes the model more sensitive to change; a wide spread makes it more tolerant.</li>`;
+ if(cols.length<5)html+=`<li>Signals not in your file (${keys.filter(k=>!cols.includes(k)).map(k=>k.toUpperCase()).join(', ')}) are ignored when scoring.</li>`;
+ html+='</ul>';
+ if(records.length){
+  const a=records.map(r=>scoreReading(r)),b=records.map(r=>r.index);
+  const nb=a.filter(x=>x<35).length,nm=a.filter(x=>x>=35&&x<65).length,nh=a.filter(x=>x>=65).length;
+  const pk=a.indexOf(Math.max(...a));
+  html+=`<b>Applied to the ${records.length}-day mission on the dashboard:</b> ${nb} day(s) baseline-like, ${nm} monitor, ${nh} high deviation. Peak deviation <b>${a[pk]}/100</b> on day ${pk+1} (the built-in mission index peaks at ${Math.max(...b)}).`;
+  eff.innerHTML=html;
+  drawScoreChart(a,b);
+  $('toLegend').innerHTML='<span style="color:#52e1f2">━ Trained-model deviation</span> &nbsp; <span style="color:#b28bff">━ Built-in mission index</span> &nbsp; dashed lines: Monitor (35) and High (65)';
+ }else{eff.innerHTML=html;}
+}
+function drawScoreChart(a,b){
+ const c=$('toChart'),ctx=c.getContext('2d'),w=c.clientWidth,h=c.clientHeight,dpr=devicePixelRatio||1;if(!w)return;
+ c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ const L=34,R=10,T=10,B=22,pw=w-L-R,ph=h-T-B,X=i=>L+i*pw/Math.max(1,a.length-1),Y=v=>T+(100-v)*ph/100;
+ ctx.font='10px system-ui';ctx.lineWidth=1;
+ [0,35,65,100].forEach(v=>{ctx.strokeStyle=v===35?'rgba(255,198,92,.6)':v===65?'rgba(255,107,134,.6)':'rgba(120,160,220,.15)';ctx.setLineDash(v===35||v===65?[5,5]:[]);ctx.beginPath();ctx.moveTo(L,Y(v));ctx.lineTo(w-R,Y(v));ctx.stroke();ctx.fillStyle='#8fa5c4';ctx.fillText(v,6,Y(v)+3)});
+ ctx.setLineDash([]);
+ const line=(arr,col,wd)=>{ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();arr.forEach((v,i)=>i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)));ctx.stroke()};
+ line(b,'#b28bff',1.5);ctx.shadowColor='#52e1f2';ctx.shadowBlur=8;line(a,'#52e1f2',2.4);ctx.shadowBlur=0;
+ ctx.fillStyle='#8fa5c4';ctx.textAlign='left';ctx.fillText('Day 1',L,h-6);ctx.textAlign='right';ctx.fillText('Day '+a.length,w-R,h-6);ctx.textAlign='left';
+}
+function trainFail(msg){const st=$('trainStatus');st.style.color='#ff6b86';st.textContent='✗ '+msg}
+function scoreReading(r){
+ if(!aiModel)return null;const w={hr:.25,hrv:.30,sbp:.25,dbp:.12,spo2:.08};let t=0,ws=0;
+ aiModel.cols.forEach(k=>{const z=Math.abs(r[k]-aiModel.stats[k].median)/aiModel.stats[k].scale;t+=w[k]*Math.min(z,5)/5;ws+=w[k]});
+ return Math.round(clamp(t/ws*100,0,100));
+}
+function acceptLiveReading(raw){
+ const r={};keys.forEach(k=>{const v=raw[k];r[k]=(v===undefined||v===null||v==='')&&aiModel?aiModel.stats[k].median:Number(v)});
+ if(!keys.every(k=>Number.isFinite(r[k])))throw new Error('Reading must contain numeric hr, hrv, sbp, dbp and spo2 fields.');
+ const score=scoreReading(r),status=score===null?'Unscored':score>=65?'High deviation':score>=35?'Monitor':'Baseline-like';
+ const item={...r,score,status,time:new Date()};liveHistory.unshift(item);liveHistory=liveHistory.slice(0,100);
+ $('liveHr').innerHTML=r.hr.toFixed(0)+'<span>bpm</span>';$('liveHrv').innerHTML=r.hrv.toFixed(1)+'<span>ms</span>';$('liveSbp').innerHTML=r.sbp.toFixed(0)+'<span>mmHg</span>';
+ $('liveScore').innerHTML=score===null?'<span style="font-size:14px">Train first</span>':score+'<span>/100</span>';
+ const box=$('liveAlert');box.className='alert '+(score===null?'normal':score>=65?'high':score>=35?'monitor':'normal');
+ box.innerHTML=`<b>${status}</b><p>Received ${item.time.toLocaleTimeString()}. ${score===null?'Train a baseline model to enable scoring.':'Deviation from this personal reference profile; not an OI probability or diagnosis.'}</p>`;
+ $('liveRows').innerHTML=liveHistory.map(x=>`<tr><td>${x.time.toLocaleTimeString()}</td><td>${x.hr.toFixed(1)}</td><td>${x.hrv.toFixed(1)}</td><td>${x.sbp.toFixed(1)}</td><td>${x.dbp.toFixed(1)}</td><td>${x.spo2.toFixed(1)}</td><td>${x.score===null?'—':x.score}</td><td>${x.status}</td></tr>`).join('');
+}
+function demoTrain(){trainModel(records.slice(0,Math.max(10,Math.ceil(records.length*.3))),'current demo mission baseline')}
+function readFileText(f){
+ return new Promise((res,rej)=>{
+  if(f.text){f.text().then(res).catch(()=>fr())}else fr();
+  function fr(){const rd=new FileReader();rd.onload=()=>res(rd.result);rd.onerror=()=>rej(new Error('Could not read the file.'));rd.readAsText(f)}
+ });
+}
+async function trainFromFile(){
+ try{
+  const f=$('trainingFile').files[0];if(!f)throw new Error('Choose a CSV file first.');
+  $('trainStatus').style.color='';$('trainStatus').textContent='Reading '+f.name+'…';
+  const data=parseCSV(await readFileText(f));trainModel(data,f.name);
+ }catch(e){trainFail(e.message)}
+}
+$('trainDemo').onclick=()=>{try{if(!records.length)generate();demoTrain()}catch(e){trainFail(e.message)}};
+$('trainUpload').onclick=trainFromFile;
+$('trainingFile').onchange=trainFromFile;
+$('sampleCsv').onclick=()=>{
+ let s='hr,hrv,sbp,dbp,spo2\n';
+ for(let i=0;i<30;i++)s+=[(65+randn()*2).toFixed(1),(55+randn()*3).toFixed(1),(120+randn()*3).toFixed(1),(80+randn()*2).toFixed(1),(98+randn()*.3).toFixed(1)].join(',')+'\n';
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/csv'}));a.download='astra_training_sample.csv';a.click();URL.revokeObjectURL(a.href);
+};
+$('connectWs').onclick=()=>{
+ try{if(liveSocket)liveSocket.close();const url=$('wsUrl').value.trim();if(!/^wss?:\/\//i.test(url))throw new Error('Use a ws:// or wss:// address.');
+ liveSocket=new WebSocket(url);$('streamStatus').textContent='Connecting to '+url+'…';
+ liveSocket.onopen=()=>$('streamStatus').textContent='Connected: '+url;
+ liveSocket.onmessage=e=>{try{const m=JSON.parse(e.data);(Array.isArray(m)?m:[m]).forEach(acceptLiveReading)}catch(err){$('streamStatus').textContent='Message error: '+err.message}};
+ liveSocket.onerror=()=>$('streamStatus').textContent='Connection error. Check that your WebSocket server is running and the URL is correct.';
+ liveSocket.onclose=()=>$('streamStatus').textContent='Stream disconnected.';
+ }catch(e){$('streamStatus').textContent=e.message}
+};
+$('disconnectWs').onclick=()=>{if(liveSocket){liveSocket.close();liveSocket=null}$('streamStatus').textContent='Stream disconnected.'};
+function stopDemo(){if(liveTimer){clearInterval(liveTimer);liveTimer=null}}
+$('simulateLive').onclick=()=>{
+ stopDemo();if(!aiModel){try{demoTrain()}catch(e){$('streamStatus').textContent=e.message;return}}
+ $('streamStatus').textContent='Demo stream running (synthetic readings, one per second).';
+ liveTimer=setInterval(()=>{const b=aiModel.stats;const r={hr:b.hr.median+randn()*b.hr.scale,hrv:b.hrv.median+randn()*b.hrv.scale,sbp:b.sbp.median+randn()*b.sbp.scale,dbp:b.dbp.median+randn()*b.dbp.scale,spo2:b.spo2.median+randn()*b.spo2.scale};
+  if(Math.random()<.18){r.hr+=10;r.hrv-=12;r.sbp-=6}
+  const lim={hr:[35,160],hrv:[5,120],sbp:[80,180],dbp:[45,120],spo2:[85,100]};keys.forEach(k=>r[k]=clamp(r[k],lim[k][0],lim[k][1]));acceptLiveReading(r)},1000);
+};
+$('stopLive').onclick=()=>{stopDemo();$('streamStatus').textContent='Demo stream stopped.'};
+
+/* ---------- wiring ---------- */
+$('generate').onclick=generate;$('duration').onchange=generate;$('scenario').onchange=generate;
+$('scrub').oninput=e=>{sel=+e.target.value-1;render()};
+$('rows').onclick=e=>{const tr=e.target.closest('tr');if(tr){sel=+tr.dataset.i;$('scrub').value=sel+1;render()}};
+$('download').onclick=()=>{if(!records.length)return;const ks=Object.keys(records[0]),csv=[ks.join(','),...records.map(r=>ks.map(k=>r[k]).join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='astra_simulated_mission.csv';a.click();URL.revokeObjectURL(a.href)};
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tabpage').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='lab')drawStand();if(b.dataset.tab==='liveai'&&aiModel)showTraining();
+});
+addEventListener('resize',()=>{render()});
+generate();requestAnimationFrame(ecgLoop);
+</script>
+</body>
+</html>
